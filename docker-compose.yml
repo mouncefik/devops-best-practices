@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-fastapi_db}
+      POSTGRES_USER: ${DB_USER:-fastapi_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fastapi_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fastapi_user} -d ${DB_NAME:-fastapi_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  app:
+    build: .
+    container_name: fastapi_app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-fastapi_user}:${DB_PASSWORD:-fastapi_password}@db:5432/${DB_NAME:-fastapi_db}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key}
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
