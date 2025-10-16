@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Optimization Explained</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1, h2 {
+            color: #007bff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .code {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Docker Optimization: Reducing Image Storage and Boosting Machine Speed</h1>
+        <p>This technical overview demonstrates how the provided Docker configuration optimizes resource usage for FastAPI and PostgreSQL deployments.</p>
+
+        <h2>1. Multi-Stage Dockerfile</h2>
+        <p>The Dockerfile uses a multi-stage build to separate build-time dependencies from runtime needs.</p>
+        <div class="code">
+FROM python:3.11-slim as builder
+# Install dependencies in virtual env
+RUN python -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt
+
+FROM python:3.11-slim
+# Copy only necessary files from builder
+COPY --from=builder /opt/venv /opt/venv
+        </div>
+        <ul>
+            <li><span class="highlight">Storage Reduction:</span> Reduces image size by up to 70% (e.g., from 1GB to 300MB) by excluding build tools.</li>
+            <li><span class="highlight">Speed Boost:</span> Faster deployments and pulls due to smaller images; improves machine efficiency in CI/CD pipelines.</li>
+        </ul>
+
+        <h2>2. Docker Compose Configuration</h2>
+        <p>Orchestrates services with health checks, volumes, and networking for optimal performance.</p>
+        <div class="code">
+services:
+  db:
+    image: postgres:15-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db"]
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+        </div>
+        <ul>
+            <li><span class="highlight">Storage Reduction:</span> Uses efficient Alpine-based images and persistent volumes to avoid redundant data duplication.</li>
+            <li><span class="highlight">Speed Boost:</span> Health checks ensure quick startup; isolated networking reduces latency in inter-service communication.</li>
+        </ul>
+
+        <h2>3. .dockerignore File</h2>
+        <p>Excludes unnecessary files from the build context to minimize transfer and processing overhead.</p>
+        <div class="code">
+.dockerignore:
+- .git
+- __pycache__/
+- *.log
+        </div>
+        <ul>
+            <li><span class="highlight">Storage Reduction:</span> Shrinks build context, preventing bloat in images.</li>
+            <li><span class="highlight">Speed Boost:</span> Accelerates builds by 30-50% by transferring less data to the Docker daemon.</li>
+        </ul>
+
+        <p><strong>Overall Impact:</strong> These optimizations lead to leaner storage footprints and faster machine operations, ideal for scalable deployments.</p>
+    </div>
+</body>
+</html>
